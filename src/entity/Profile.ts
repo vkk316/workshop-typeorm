@@ -23,7 +23,8 @@ export class Profile {
     @Column(() => ThaiAddress)
     address: ThaiAddress
 
-    // @Column({precision: 10, scale: 2})
-    // cost: number
+    // test only
+    @Column('decimal',{precision: 10, scale: 2, nullable: true})
+    cost: number
 
 }
