@@ -12,7 +12,7 @@ export class Profile {
     @Column()
     displayName: string
 
-    @Column({type: 'enum', enum: Gender, default: Gender.FEMALE})
+    @Column({type: 'enum', enum: Gender})
     gender: Gender
 
     @Column({nullable: true})
@@ -28,7 +28,7 @@ export class Profile {
     @Column('decimal',{precision: 10, scale: 2, nullable: true})
     cost: number
 
-    @OneToOne(() => User, (user) => user.profile, {onDelete: 'CASCADE'})
+    @OneToOne(() => User, (user) => user.profile, {onDelete: 'CASCADE', eager: true})
     @JoinColumn()
     user: User
 
