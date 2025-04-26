@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from "typeorm"
 import { Gender } from "../enum/gender.enum"
 import { ThaiAddress } from "./ThaiAddress"
+import { User } from "./User"
 
 @Entity()
 export class Profile {
@@ -26,5 +27,9 @@ export class Profile {
     // test only
     @Column('decimal',{precision: 10, scale: 2, nullable: true})
     cost: number
+
+    @OneToOne(() => User, (user) => user.profile, {onDelete: 'CASCADE'})
+    @JoinColumn()
+    user: User
 
 }
