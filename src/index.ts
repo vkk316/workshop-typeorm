@@ -11,7 +11,8 @@ AppDataSource.initialize()
     // await createUserList(mockUser);
     
     // ลองทดสอบ list ข้อมูล โดยส่ง filter เข้าไป
-    console.log(await getUserList({username_ilike: "Doe"}));
+    // console.log(await getUserList({username_ilike: "Doe", gender: Gender.MALE}));
+    await transferCost();
 
   })
   .catch((error) => console.log(error));
@@ -40,12 +41,14 @@ async function getUserList(filter?: any) {
     qb.andWhere("user.username ILIKE :username", { username: `%${filter.username_ilike}%` });
   }
   if (filter?.displayName_ilike) {
-    qb.andWhere("user.displayName ILIKE :displayName", { displayName: `%${filter.displayName_ilike}%` });
+    qb.leftJoin("user.profile", "profile");
+    qb.andWhere("profile.displayName ILIKE :displayName", { displayName: `%${filter.displayName_ilike}%` });
   }
   if (filter?.gender) {
     qb.leftJoin("user.profile", "profile");
     qb.andWhere("profile.gender = :gender", { gender: filter.gender });
   }
+  
   const users = await qb.getMany();
   return users;
 }
@@ -59,4 +62,20 @@ async function deleteUser(id: number) {
   const userRepository = AppDataSource.getRepository(User);
   const deletedUser = await userRepository.delete(id);
   console.log("User deleted", deletedUser);
+}
+
+async function transferCost() {
+  const amount = 1000;
+  const profileRepository = AppDataSource.getRepository(Profile);
+
+  const profile1 = await profileRepository.findOne({ where: {id: 1} } );
+  const profile2 = await profileRepository.findOne({ where: {id: 2} } );
+
+  // create transaction
+
+  await AppDataSource.transaction(async (transactionalEntityManager) => {
+    await transactionalEntityManager.update(Profile, {id: 1}, {cost: () => `cost + ${amount}`});
+    throw new Error("test error");
+    await transactionalEntityManager.update(Profile, {id: 2}, {cost: () => `cost - ${amount}`});
+  });
 }
