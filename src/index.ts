@@ -2,6 +2,7 @@ import { ILike } from "typeorm";
 import { AppDataSource } from "./data-source";
 import { Profile } from "./entity/Profile";
 import { User } from "./entity/User";
+import { Gender } from "./enum/gender.enum";
 
 AppDataSource.initialize()
   .then(async () => {
@@ -10,8 +11,7 @@ AppDataSource.initialize()
     // await createUserList(mockUser);
     
     // ลองทดสอบ list ข้อมูล โดยส่ง filter เข้าไป
-    // ให้ uncommelnt บรรทัดล่าง ส่ง filter เข้าไปเพื่อค้นหา profile ที่มี gender เป็น MALE และ display name มีค่าเป็น Doe
-    // await getProfileList({gender: Gender.MALE, displayName_ilike: "Doe"});
+    console.log(await getUserList({username_ilike: "Doe"}));
 
   })
   .catch((error) => console.log(error));
@@ -35,15 +35,18 @@ async function getUser(id: number) {
 async function getUserList(filter?: any) {
   const userRepository = AppDataSource.getRepository(User);
   // dynamic where filter
-  const where = {};
+  const qb = userRepository.createQueryBuilder("user");
   if (filter?.username_ilike) {
-    where["username"] = ILike(`%${filter.username_ilike}%`);
+    qb.andWhere("user.username ILIKE :username", { username: `%${filter.username_ilike}%` });
   }
-
-  const users = await userRepository
-    .createQueryBuilder("user")
-    .where(where) // เอาทุกเงื่อนไขที่เข้า if มา and กัน
-    .getMany();
+  if (filter?.displayName_ilike) {
+    qb.andWhere("user.displayName ILIKE :displayName", { displayName: `%${filter.displayName_ilike}%` });
+  }
+  if (filter?.gender) {
+    qb.leftJoin("user.profile", "profile");
+    qb.andWhere("profile.gender = :gender", { gender: filter.gender });
+  }
+  const users = await qb.getMany();
   return users;
 }
 
@@ -57,24 +60,3 @@ async function deleteUser(id: number) {
   const deletedUser = await userRepository.delete(id);
   console.log("User deleted", deletedUser);
 }
-
-async function getProfileList(filter?: any) {
-  const profileRepository = await AppDataSource.getRepository(Profile);
-  
-  // dynamic where filter
-  const where = {};
-  if (filter?.gender) {
-    where["gender"] = filter.gender;
-  }
-  if (filter?.displayName_ilike) {
-    where["displayName"] = ILike(`%${filter.displayName_ilike}%`);
-  }
-  
-  const profiles = await profileRepository
-    .createQueryBuilder("profile")
-    .where(where) // เอาทุกเงื่อนไขที่เข้า if มา and กัน
-    .getMany();
-
-  return profiles;
-}
-
